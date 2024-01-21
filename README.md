@@ -6,6 +6,8 @@ Currently has
 - [x] working MFP based on MFP68901 from Motorola. I have amended this to include RX/TX fifo and configurable baud rates to improve stability and predictable results. Timers and GPIO also working
 - [x] working Hyperram 32 bit memory. Upto 4 64mbit chips supported.
 - [X] Flashrom read/xip using QUAD SPI. This code is being built from scratch to support the Flash Rom on digilent boards (such as Nexys Video)
+- [X] CPM68k working with ramdrive and existing images
+- [X] Easy68k compatible console io  
 - [ ] [WIP] Integrate VGA/HDMI Controller from Merlin vga project
       
 TO DO
