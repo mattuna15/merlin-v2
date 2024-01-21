@@ -157,19 +157,6 @@ component hyperram is
         o_resetn     : out std_logic);
 end component;
 
-component ROM_controller_SPI is
-    PORT(clk_50, rst, read, write: in STD_LOGIC;
-       si_i, si_o : out STD_LOGIC;
-       si_t, wp_t: out STD_LOGIC;
-       cs_n: out STD_LOGIC;
-       wp: out STD_LOGIC;
-       qd: in STD_LOGIC_VECTOR(3 downto 0);
-      -- so, acc, hold: in STD_LOGIC;
-       address_in: in STD_LOGIC_VECTOR(31 downto 0);
-       data_out: out STD_LOGIC_VECTOR(15 downto 0);
-       done, in_progress: out STD_LOGIC);
-end component;
-
 component spi_flash is
  Port (clk_i, rst, read, write: in STD_LOGIC;
        spi_o: out STD_LOGIC_vector(3 downto 0);
@@ -189,10 +176,10 @@ end component;
 component blk_mem_gen_1 IS
   PORT (
     clka : IN STD_LOGIC;
-    addra : IN STD_LOGIC_VECTOR(11 DOWNTO 0);
-    dina : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-    douta : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
-    wea   : in std_logic_vector(3 downto 0)
+    addra : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+    dina : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+    douta : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+    wea   : in std_logic_vector(1 downto 0)
   );
 END component;
 
@@ -243,7 +230,7 @@ signal romdata_s		: std_logic_vector(15 downto 0);
 signal sdram_data_out_s		: std_logic_vector(31 downto 0) := (others => '0');
 signal sdram_data_in_s		: std_logic_vector(31 downto 0) := (others => '0');
 
-signal stackram_out_s : std_logic_vector(31 downto 0);
+signal stackram_out_s : std_logic_vector(15 downto 0);
 signal stackram_cs : std_logic := '1';
 
 signal cpu_data_in_s		: std_logic_vector(31 downto 0);
@@ -273,9 +260,8 @@ signal led_s			: std_logic_vector(7 downto 0);
 
 signal sdram_we_s		: std_logic := '0';
 signal sdram_busy_s		: std_logic := '0';
-signal sdram_req_s		: std_logic := '0';
 signal sdram_addr_s		: std_logic_vector(31 downto 0) := (others => '0');
-signal sdram_cs_s		: std_logic := '0';
+signal sdram_cs_s, sdram_valid_s		: std_logic := '0';
 signal sdram_ds_s		: std_logic_vector(3 downto 0) := (others => '0');
 
 signal reset_probe_s		: std_logic;
@@ -315,11 +301,11 @@ signal si,so,acc,hold,wp : std_logic;
 signal locked: std_logic;
 signal qd, spi_o, spi_en: std_logic_vector(3 downto 0);
 signal init_boot :std_logic := '0';
-
+signal wea : std_logic_vector(1 downto 0) := "00";
 signal flash_address: std_logic_vector(31 downto 0);
 
 attribute dont_touch : string;
-attribute dont_touch of cpu_addr_s, DTACK_OUT_MFPn, cpu_data_in_s,cpu_data_out_s, cpu_dsack_n_s, cpu_as_n_s, cpu_rw_n_s, sdram_addr_s, bus_state_s, sdram_req_s, sdram_busy_s, sdram_cs_s :   signal is "true";
+attribute dont_touch of cpu_addr_s, DTACK_OUT_MFPn, sdram_ds_s, cpu_data_in_s,cpu_data_out_s, cpu_dsack_n_s, cpu_ds_s, cpu_as_n_s, cpu_rw_n_s, sdram_addr_s, bus_state_s, sdram_valid_s, sdram_busy_s, sdram_cs_s :   signal is "true";
 attribute dont_touch of Flash : label  is "true";
 
 begin
@@ -396,11 +382,18 @@ begin
 stack: blk_mem_gen_1 
   PORT map (
     clka => clk_i,
-    addra => cpu_addr_s(13 downto 2), 
+    addra => cpu_addr_s(15 downto 1) & '0', 
     douta => stackram_out_s,
-    dina => cpu_data_out_s,
-    wea => not (cpu_ds_s) and stackram_cs and not cpu_rw_n_s
+    dina => cpu_data_out_s(31 downto 16),
+    wea => wea
   );
+  
+ wea(1) <=  (not (cpu_uds_n_s or cpu_rw_n_s)) and stackram_cs;
+ wea(0) <=  (not (cpu_lds_n_s or cpu_rw_n_s)) and stackram_cs;
+ 
+ sdram_ds_s <= not cpu_ds_s 
+                when sdram_cs_s = '1' and cpu_rw_n_s = '0' 
+                else "0000";
   
 boot: boot_rom 
   PORT map (
@@ -456,10 +449,10 @@ qd(3) <= dq(3) when spi_en(3) = '1' else 'Z';
         cpu_resetn => cpu_reset_n_s,  -- Reset signal (active-low)
         
         i_wstrb     => sdram_ds_s,
-        i_valid     => sdram_cs_s,
+        i_valid     => sdram_valid_s,
         o_init      => open,
         o_ready     => sdram_busy_s,
-        i_address   => sdram_addr_s,
+        i_address   => sdram_addr_s(31 downto 2) & "00",
         i_write_data => sdram_data_in_s,
         o_read_data => sdram_data_out_s,
         o_csn       => hr_csn_a,               -- Connect to chip select 0 signal in your VHDL design
@@ -599,6 +592,7 @@ begin
 		case bus_state_s is
 			when IDLE =>
 			     sdram_cs_s <= '0';
+			     sdram_valid_s <= '0';
 				cpu_dsack_n_s <= "11";
 				cpu_berr_n_s <= '1';
 				bootrom_cs_s <= '0';
@@ -610,13 +604,19 @@ begin
 					if (cpu_addr_s(31 downto 16) = x"00fc" or  (cpu_addr_s >= x"00000000" and cpu_addr_s <= x"00000007" and init_boot = '0') ) then
 						bootrom_cs_s <= '1';
 						bus_state_s <= ACK;
-				    elsif (cpu_addr_s < x"00001000") then
+				    elsif (cpu_addr_s <= x"0000FFFF") then 
 				        stackram_cs <= '1';
 				        bus_state_s <= ACK;
 				    elsif (cpu_addr_s(31 downto 16) = x"00fe") then
 				        offset := cpu_addr_s - x"FE0000";
 				        flash_address <= x"a00000" + offset;
 					   	fl_cs_s <= '1';
+					    if fl_dtack = '1' then
+						  bus_state_s <= ACK;
+						end if;
+				    elsif (cpu_addr_s(31 downto 24) = x"01") then -- extended rom (CPM etc)
+				        flash_address <= X"00" & cpu_addr_s(23 downto 0);
+				        fl_cs_s <= '1';
 					    if fl_dtack = '1' then
 						  bus_state_s <= ACK;
 						end if;
@@ -627,11 +627,12 @@ begin
 						end if;
 				    elsif (cpu_addr_s < x"fc0000") then -- hyperram apart from stack
 				            bus_state_s <= SDRAM_WAIT;
+				            sdram_valid_s <= '1';
 				            sdram_addr_s <= cpu_addr_s;
                             sdram_data_in_s <= cpu_data_out_s;
-                            sdram_req_s <= '1';
                             sdram_we_s <= not cpu_rw_n_s;
                             sdram_data_in_s <= cpu_data_out_s;
+                            sdram_cs_s <= '1';
 					else
 						cpu_berr_n_s <= '0';
 						bus_state_s <= ERROR;
@@ -647,22 +648,16 @@ begin
 		      	bus_state_s <= ACK;
 		      	
 			when SDRAM_WAIT =>
-			    sdram_cs_s <= '1';
-                if (cpu_rw_n_s = '0') then
-                    sdram_ds_s <= not cpu_ds_s;
-                else
-                    sdram_ds_s <= "0000";
-                end if;
+			    sdram_valid_s <= '0';
 
 				if (sdram_busy_s = '1') then
-				    sdram_req_s <= '0';
 					bus_state_s <= ACK;
 				end if;
 
 		  	when ACK =>
-					if(stackram_cs = '1' or sdram_cs_s = '1') then
+					if(sdram_cs_s = '1') then
 						cpu_dsack_n_s <= "00";
-				    elsif (bootrom_cs_s = '1' or fl_cs_s = '1') then
+				    elsif (stackram_cs = '1' or bootrom_cs_s = '1' or fl_cs_s = '1') then
 				        cpu_dsack_n_s <= "01";
 					else
 						cpu_dsack_n_s <= "10";
@@ -697,7 +692,7 @@ cpu_data_in_s <=
         x"00fc00fc" when cpu_addr_s = x"00000004" else
         x"00000000" when cpu_addr_s = x"00000006" else
         romdata_s & romdata_s when bootrom_cs_s = '1' else
-        stackram_out_s when stackram_cs = '1' else
+        stackram_out_s & stackram_out_s  when stackram_cs = '1' else
         DATA_OUT_MFP & DATA_OUT_MFP & DATA_OUT_MFP & DATA_OUT_MFP when MFP_CS_In = '0' else
 		sdram_data_out_s when sdram_cs_s = '1' else
 		fl_data_o & fl_data_o when fl_cs_s = '1' else 
