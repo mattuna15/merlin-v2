@@ -1333,9 +1333,9 @@ begin
                     OP_I <= ROTL; -- Register shifts.
                 end if;
             when x"F" => -- 1111, Coprocessor Interface / 68K40 Extensions.
-                -- MC68881 BIU coprocessor interface: route F-line opcodes into
-                -- the coprocessor execution path instead of decoding ILLEGAL.
-                OP_I <= COPROC;
+                -- Keep legacy F-line exception behavior until COPROC execute
+                -- sequencing is fully implemented.
+                OP_I <= UNIMPLEMENTED;
             when others => -- U, X, Z, W, H, L, -.
                 null;
             end case;

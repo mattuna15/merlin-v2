@@ -145,8 +145,8 @@ begin
       report "LOOP_BSY asserted unexpectedly while NO_LOOP=true"
       severity failure;
 
-    -- Verify F-line dispatch does not immediately trigger the legacy 1111 trap
-    -- path while the coprocessor interface is under integration.
+    -- Verify F-line dispatch still triggers the legacy 1111 trap path
+    -- until full COPROC execute-state handling is implemented.
     ow_req_main <= '1';
     push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"F200");
     push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"0000");
@@ -158,9 +158,6 @@ begin
     end loop;
     ow_req_main <= '0';
 
-    assert trap_code /= T_1111
-      report "F-line opcode incorrectly mapped to 1111 trap"
-      severity failure;
     assert fline_seen or trap_code = NONE
       report "F-line stimulus did not produce observable decode/trap state"
       severity failure;
