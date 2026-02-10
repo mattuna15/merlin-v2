@@ -1861,6 +1861,10 @@ begin
                             elsif BIW_1(11) = '1' and BIW_1(15) = '0' and DR_IN_USE = '1' then -- ADH.
                                 NEXT_FETCH_STATE <= START_OP;
                             end if;
+                        when COPROC =>
+                            -- MC68881 BIU coprocessor interface:
+                            -- fetch the mandatory coprocessor extension word first.
+                            NEXT_FETCH_STATE <= FETCH_EXWORD_1;
                         when ANDI_TO_CCR | ANDI_TO_SR | EORI_TO_CCR | EORI_TO_SR | ORI_TO_CCR | ORI_TO_SR | RESET =>
                             -- Wait until the status register / condition codes have been updated. Otherwise we 
                             -- possibly have a data hazard using the wrong condition codes for the operation.

@@ -20,7 +20,7 @@ This folder is CPU RTL only. Board wiring, memory map decode, and peripheral arb
 Per core header notes in `68K30L/wf68k30L_top.vhd:9` through `68K30L/wf68k30L_top.vhd:14`:
 - Implemented as a pipelined 68030-compatible core.
 - Intentionally missing MMU and cache behavior.
-- Intentionally missing coprocessor interface and related cp* operations.
+- Coprocessor support is under active integration: F-line decode is now dispatched to a CPU coprocessor path for BIU-based external interfacing, but full 68881 execution semantics are still pending.
 - MMU operations like `PFLUSH/PLOAD/PMOVE/PTEST` are not implemented.
 
 ## Public CPU Interface
@@ -107,3 +107,5 @@ git config core.hooksPath .githooks
 
 ## Follow-up Work
 Actionable follow-up items are tracked in `68K30L/REVIEW_CHECKLIST.md`.
+
+MC68881 BIU integration-specific remaining work is tracked in `68K30L/MC68881_BIU_CHECKLIST.md`.

@@ -142,6 +142,20 @@ begin
       report "LOOP_BSY asserted unexpectedly while NO_LOOP=true"
       severity failure;
 
+    -- Verify F-line dispatch enters the coprocessor path without an immediate trap.
+    push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"F200");
+    ow_req_main <= '1';
+    wait until rising_edge(clk);
+    wait until rising_edge(clk);
+    ow_req_main <= '0';
+
+    assert op = COPROC
+      report "F-line opcode did not decode as COPROC"
+      severity failure;
+    assert trap_code = NONE
+      report "F-line opcode raised trap during decode"
+      severity failure;
+
     report "Opcode decoder bench: passed" severity note;
     finish;
   end process;

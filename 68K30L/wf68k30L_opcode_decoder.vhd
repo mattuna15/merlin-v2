@@ -640,6 +640,7 @@ begin
                  C when (OP_I = DIVS or OP_I = DIVU) and IPIPE.D(8 downto 6) = "001" else
                  C when OP_I = EORI or OP_I = EORI_TO_CCR or OP_I = EORI_TO_SR else
                  C when OP_I = LINK or OP_I = MOVEC else
+                 C when OP_I = COPROC else
                  C when OP_I = MOVEM or OP_I = MOVEP or OP_I = MOVES else
                  C when (OP_I = MULS or OP_I = MULU) and IPIPE.D(8 downto 6) = "000" else
                  C when OP_I = ORI_TO_CCR or OP_I = ORI_TO_SR or OP_I = ORI else
@@ -1332,7 +1333,9 @@ begin
                     OP_I <= ROTL; -- Register shifts.
                 end if;
             when x"F" => -- 1111, Coprocessor Interface / 68K40 Extensions.
-                OP_I <= UNIMPLEMENTED;
+                -- MC68881 BIU coprocessor interface: route F-line opcodes into
+                -- the coprocessor execution path instead of decoding ILLEGAL.
+                OP_I <= COPROC;
             when others => -- U, X, Z, W, H, L, -.
                 null;
             end case;
