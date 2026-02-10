@@ -2005,7 +2005,7 @@ begin
                 -- Fetch exactly one coprocessor extension word without
                 -- entering indexed-EA extension decode paths.
                 if EW_ACK = '1' or EW_RDY = '1' then
-                    if COPROC_MEM_EA = '1' then
+                    if COPROC_MEM_EA = '1' and (COPROC_RD_TRANSFER = '1' or COPROC_WR_TRANSFER = '1') then
                         NEXT_FETCH_STATE <= CALC_AEFF;
                     else
                         NEXT_FETCH_STATE <= INIT_EXEC_WB;
