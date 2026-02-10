@@ -6,6 +6,7 @@ This checklist tracks the remaining work to reach full MC68020/030 + MC68881 BIU
 - [x] A dedicated `COPROC` opcode class exists in shared CPU opcode typing for staged integration work.
 - [x] Legacy F-line trap behavior is intentionally preserved until dedicated `COPROC` execute-state sequencing is implemented.
 - [x] Control path explicitly avoids reusing generic `FETCH_EXWORD_1` indexed-address extension parsing for `COPROC`.
+- [x] A dedicated `FETCH_COPROC_EW` state fetches one coprocessor extension word without indexed-EA side parsing.
 - [x] Function-code path documents bus-only coprocessor interfacing intent (no custom cp handshake pins).
 
 ## Next steps (required for full architectural compatibility)

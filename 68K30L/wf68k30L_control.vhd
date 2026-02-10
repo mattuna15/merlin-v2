@@ -343,7 +343,7 @@ constant BF_BYTES_I : BF_BYTEMATRIX :=
      (1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5),
      (1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5));
 --
-type FETCH_STATES is (START_OP, CALC_AEFF, FETCH_DISPL, FETCH_EXWORD_1, FETCH_D_LO, FETCH_D_HI, FETCH_OD_HI, FETCH_OD_LO, FETCH_ABS_HI, 
+type FETCH_STATES is (START_OP, CALC_AEFF, FETCH_DISPL, FETCH_EXWORD_1, FETCH_COPROC_EW, FETCH_D_LO, FETCH_D_HI, FETCH_OD_HI, FETCH_OD_LO, FETCH_ABS_HI, 
                       FETCH_ABS_LO, FETCH_IDATA_B2, FETCH_IDATA_B1, FETCH_MEMADR, FETCH_OPERAND, INIT_EXEC_WB, SLEEP, SWITCH_STATE);
 type EXEC_WB_STATES is (IDLE, EXECUTE, ADR_PIPELINE, WRITEBACK, WRITE_DEST);
 signal FETCH_STATE          : FETCH_STATES;
@@ -435,11 +435,13 @@ begin
             EW_RDY <= '0';
         elsif FETCH_STATE = FETCH_EXWORD_1 and NEXT_FETCH_STATE /= FETCH_EXWORD_1 then
             EW_RDY <= '0';
+        elsif FETCH_STATE = FETCH_COPROC_EW and NEXT_FETCH_STATE /= FETCH_COPROC_EW then
+            EW_RDY <= '0';
         elsif FETCH_STATE = FETCH_D_LO and NEXT_FETCH_STATE /= FETCH_D_LO then
             EW_RDY <= '0';
         elsif FETCH_STATE = FETCH_IDATA_B1 and NEXT_FETCH_STATE /= FETCH_IDATA_B1 then
             EW_RDY <= '0';
-        elsif (FETCH_STATE = FETCH_DISPL or FETCH_STATE = FETCH_EXWORD_1 or FETCH_STATE = FETCH_IDATA_B1 or FETCH_STATE = FETCH_D_LO) and EW_ACK = '1' then
+        elsif (FETCH_STATE = FETCH_DISPL or FETCH_STATE = FETCH_EXWORD_1 or FETCH_STATE = FETCH_COPROC_EW or FETCH_STATE = FETCH_IDATA_B1 or FETCH_STATE = FETCH_D_LO) and EW_ACK = '1' then
             EW_RDY <= '1';
         end if;
         
@@ -454,12 +456,14 @@ begin
 
     EW_REQ <= '0' when EW_ACK = '1' or EW_RDY = '1' else
               '1' when FETCH_STATE = FETCH_DISPL or FETCH_STATE = FETCH_EXWORD_1 else 
+              '1' when FETCH_STATE = FETCH_COPROC_EW else
               '1' when FETCH_STATE = FETCH_D_HI or FETCH_STATE = FETCH_D_LO else 
               '1' when FETCH_STATE = FETCH_OD_HI or FETCH_STATE = FETCH_OD_LO else
               '1' when FETCH_STATE = FETCH_ABS_HI or FETCH_STATE = FETCH_ABS_LO else
               '1' when FETCH_STATE = FETCH_IDATA_B2 or FETCH_STATE = FETCH_IDATA_B1 else
               '1' when FETCH_STATE /= FETCH_DISPL and NEXT_FETCH_STATE = FETCH_DISPL else
               '1' when FETCH_STATE /= FETCH_EXWORD_1 and NEXT_FETCH_STATE = FETCH_EXWORD_1 else
+              '1' when FETCH_STATE /= FETCH_COPROC_EW and NEXT_FETCH_STATE = FETCH_COPROC_EW else
               '1' when FETCH_STATE /= FETCH_D_HI and NEXT_FETCH_STATE = FETCH_D_HI else
               '1' when FETCH_STATE /= FETCH_D_LO and NEXT_FETCH_STATE = FETCH_D_LO else
               '1' when FETCH_STATE /= FETCH_OD_HI and NEXT_FETCH_STATE = FETCH_OD_HI else
@@ -1863,11 +1867,9 @@ begin
                             end if;
                         when COPROC =>
                             -- MC68881 BIU coprocessor interface:
-                            -- Do not reuse FETCH_EXWORD_1 here. That path decodes
-                            -- 68020 indexed-address extension words and can
-                            -- desynchronize the PC for coprocessor extension formats.
-                            -- Dedicated COPROC extension sequencing is required.
-                            NEXT_FETCH_STATE <= INIT_EXEC_WB;
+                            -- Dedicated coprocessor extension-word fetch. Do
+                            -- not reuse FETCH_EXWORD_1 (indexed-EA parser).
+                            NEXT_FETCH_STATE <= FETCH_COPROC_EW;
                         when ANDI_TO_CCR | ANDI_TO_SR | EORI_TO_CCR | EORI_TO_SR | ORI_TO_CCR | ORI_TO_SR | RESET =>
                             -- Wait until the status register / condition codes have been updated. Otherwise we 
                             -- possibly have a data hazard using the wrong condition codes for the operation.
@@ -1982,6 +1984,15 @@ begin
                     NEXT_FETCH_STATE <= FETCH_D_LO;
                 else
                     NEXT_FETCH_STATE <= FETCH_D_HI;
+                end if;
+            when FETCH_COPROC_EW =>
+                -- MC68881 BIU coprocessor interface:
+                -- Fetch exactly one coprocessor extension word without
+                -- entering indexed-EA extension decode paths.
+                if EW_ACK = '1' or EW_RDY = '1' then
+                    NEXT_FETCH_STATE <= INIT_EXEC_WB;
+                else
+                    NEXT_FETCH_STATE <= FETCH_COPROC_EW;
                 end if;
             when FETCH_D_LO =>
                 if EW_ACK = '1' and OD_REQ_32 = '1' then
