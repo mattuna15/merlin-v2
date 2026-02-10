@@ -1,0 +1,47 @@
+name: GHDL CPU CI
+
+on:
+  push:
+
+jobs:
+  ghdl-cpu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ghdl/setup-ghdl@v1
+        with:
+          version: 5.1.1
+          backend: mcode
+      - name: Analyze CPU RTL and benches
+        run: |
+          ghdl -a --std=08 --ieee=synopsys \
+            68K30L/wf68k30L_pkg.vhd \
+            68K30L/wf68k30L_address_registers.vhd \
+            68K30L/wf68k30L_alu.vhd \
+            68K30L/wf68k30L_bus_interface.vhd \
+            68K30L/wf68k30L_control.vhd \
+            68K30L/wf68k30L_data_registers.vhd \
+            68K30L/wf68k30L_exception_handler.vhd \
+            68K30L/wf68k30L_opcode_decoder.vhd \
+            68K30L/wf68k30L_top.vhd \
+            68K30L/tb/tb_wf68k30L_alu.vhd \
+            68K30L/tb/tb_wf68k30L_opcode_decoder.vhd \
+            68K30L/tb/tb_wf68k30L_bus_interface.vhd \
+            68K30L/tb/tb_wf68k30L_top_smoke.vhd
+      - name: Run tb_wf68k30L_alu
+        run: |
+          ghdl -e --std=08 --ieee=synopsys tb_wf68k30L_alu
+          ghdl -r --std=08 --ieee=synopsys tb_wf68k30L_alu --assert-level=error
+      - name: Run tb_wf68k30L_opcode_decoder
+        run: |
+          ghdl -e --std=08 --ieee=synopsys tb_wf68k30L_opcode_decoder
+          ghdl -r --std=08 --ieee=synopsys tb_wf68k30L_opcode_decoder --assert-level=error
+      - name: Run tb_wf68k30L_bus_interface
+        run: |
+          ghdl -e --std=08 --ieee=synopsys tb_wf68k30L_bus_interface
+          ghdl -r --std=08 --ieee=synopsys tb_wf68k30L_bus_interface --assert-level=error
+      - name: Run tb_wf68k30L_top_smoke
+        run: |
+          ghdl -e --std=08 --ieee=synopsys tb_wf68k30L_top_smoke
+          ghdl -r --std=08 --ieee=synopsys tb_wf68k30L_top_smoke --assert-level=error
+
