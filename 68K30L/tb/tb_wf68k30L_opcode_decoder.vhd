@@ -161,6 +161,23 @@ begin
       report "F-line decode unexpectedly raised trap while COPROC decode is active"
       severity failure;
 
+    -- Unsupported F-line sub-encoding should preserve legacy line-1111 trap.
+    fline_seen := false;
+    ow_req_main <= '1';
+    push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"F400");
+    push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"0000");
+    for i in 0 to 40 loop
+      wait until rising_edge(clk);
+      if trap_code = T_1111 then
+        fline_seen := true;
+      end if;
+    end loop;
+    ow_req_main <= '0';
+
+    assert fline_seen
+      report "Unsupported F-line stimulus did not raise T_1111"
+      severity failure;
+
     report "Opcode decoder bench: passed" severity note;
     finish;
   end process;

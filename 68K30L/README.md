@@ -20,7 +20,7 @@ This folder is CPU RTL only. Board wiring, memory map decode, and peripheral arb
 Per core header notes in `68K30L/wf68k30L_top.vhd:9` through `68K30L/wf68k30L_top.vhd:14`:
 - Implemented as a pipelined 68030-compatible core.
 - Intentionally missing MMU and cache behavior.
-- Coprocessor support is under active integration: F-line decode is dispatched to a CPU coprocessor path with extension-word format classification for FMOVE, FSAVE/FRESTORE, arithmetic/transcendental, and FP branch/trap classes; full 68881 execution semantics are still pending.
+- Coprocessor support is under active integration: supported F-line classes are dispatched to a CPU coprocessor path with extension-word format classification for FMOVE, FSAVE/FRESTORE, arithmetic/transcendental, and FP branch/trap classes; unsupported F-line sub-encodings preserve legacy line-1111 trap behavior until full execution sequencing is implemented.
 - MMU operations like `PFLUSH/PLOAD/PMOVE/PTEST` are not implemented.
 
 ## Public CPU Interface

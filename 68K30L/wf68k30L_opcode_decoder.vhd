@@ -1333,7 +1333,14 @@ begin
                     OP_I <= ROTL; -- Register shifts.
                 end if;
             when x"F" => -- 1111, Coprocessor Interface / 68K40 Extensions.
-                OP_I <= COPROC;
+                -- Keep legacy line-1111 trap behavior for currently
+                -- unsupported F-line sub-encodings.
+                case IPIPE.D(8 downto 6) is
+                    when "000" | "010" | "011" | "110" | "111" =>
+                        OP_I <= COPROC;
+                    when others =>
+                        OP_I <= UNIMPLEMENTED;
+                end case;
             when others => -- U, X, Z, W, H, L, -.
                 null;
             end case;
