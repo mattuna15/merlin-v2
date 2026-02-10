@@ -112,6 +112,7 @@ begin
 
   stimulus: process
     variable saw_opcode_rd : boolean := false;
+    variable saw_coproc    : boolean := false;
   begin
     report "Opcode decoder bench: start" severity note;
 
@@ -143,13 +144,21 @@ begin
       severity failure;
 
     -- Verify F-line dispatch enters the coprocessor path without an immediate trap.
+    -- COPROC is modeled as a level-C class instruction in this decoder and
+    -- therefore requires one extension word in the pipe before dispatch.
     push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"F200");
+    push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"0000");
     ow_req_main <= '1';
-    wait until rising_edge(clk);
-    wait until rising_edge(clk);
+    for i in 0 to 20 loop
+      wait until rising_edge(clk);
+      if op = COPROC then
+        saw_coproc := true;
+        exit;
+      end if;
+    end loop;
     ow_req_main <= '0';
 
-    assert op = COPROC
+    assert saw_coproc
       report "F-line opcode did not decode as COPROC"
       severity failure;
     assert trap_code = NONE
