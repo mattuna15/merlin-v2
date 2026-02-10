@@ -760,6 +760,7 @@ begin
     AVECn_BUSIF <= AVECn when BUSY_EXH = '1' else '1';
 
     CPU_SPACE <= '1' when OP = BKPT and DATA_RD_MAIN = '1' else
+                 '1' when OP = COPROC and (DATA_RD_MAIN = '1' or DATA_WR_MAIN = '1') else
                  CPU_SPACE_EXH when BUSY_EXH = '1' else '0';
 
     -- The bit field offset is bit wise.
@@ -830,6 +831,8 @@ begin
         end if;
     end process P_ADR_LATCHES;
 
+    -- MC68881 BIU coprocessor interface: coprocessor bus cycles are
+    -- encoded via standard function-code driven accesses (no custom handshake).
     FC_I <= FC_LATCH when BUS_BSY = '1' else
             SFC when USE_SFC = '1' else
             DFC when USE_DFC = '1' else
