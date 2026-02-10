@@ -729,7 +729,7 @@ begin
                 end loop;
                 RESULT_VAR(7 downto 0) := unsigned(OP2(7 downto 0));
             when JSR =>
-                RESULT_VAR := unsigned(OP1) + to_unsigned(2, RESULT'length); -- Add offset of two to the Pointer of the last extension word.
+                RESULT_VAR := unsigned(OP1) + to_unsigned(2, RESULT_VAR'length); -- Add offset of two to the Pointer of the last extension word.
             when MOVEQ =>
                 for i in 31 downto 8 loop
                     RESULT_VAR(i) := OP1(7);
@@ -758,9 +758,9 @@ begin
                     -- This logic provides the incremented address register in case of ax,(ax)+ addressing mode.
                     -- Thus, the value written to memory is the incremented address.
                     case OP_SIZE is
-                        when LONG => RESULT_VAR := unsigned(OP1_SIGNEXT) + to_unsigned(4, RESULT'length);
-                        when WORD => RESULT_VAR := unsigned(OP1_SIGNEXT) + to_unsigned(2, RESULT'length);
-                        when BYTE => RESULT_VAR := unsigned(OP1_SIGNEXT) + to_unsigned(1, RESULT'length);
+                        when LONG => RESULT_VAR := unsigned(OP1_SIGNEXT) + to_unsigned(4, RESULT_VAR'length);
+                        when WORD => RESULT_VAR := unsigned(OP1_SIGNEXT) + to_unsigned(2, RESULT_VAR'length);
+                        when BYTE => RESULT_VAR := unsigned(OP1_SIGNEXT) + to_unsigned(1, RESULT_VAR'length);
                     end case;
                 else
                     RESULT_VAR := unsigned(OP1_SIGNEXT);
