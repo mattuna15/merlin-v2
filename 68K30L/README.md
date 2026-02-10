@@ -52,6 +52,13 @@ Key bus/control ports (`68K30L/wf68k30L_top.vhd:242` through `68K30L/wf68k30L_to
 - `68K30L/wf68k30L_pkg.vhd` contains duplicated `AR_IN_USE` declarations in the same component interface (`68K30L/wf68k30L_pkg.vhd:95` and `68K30L/wf68k30L_pkg.vhd:263`), which increases drift risk and should be reviewed.
 - Top-level repo license is MIT (`LICENSE`), while CPU source headers mention CERN OHL text, so provenance and relicensing intent should be explicitly documented.
 
+## Numeric Package Policy
+Policy for `68K30L/` maintenance:
+- Do not introduce new `ieee.std_logic_unsigned` or `ieee.std_logic_arith` usage in any new or modified CPU RTL file.
+- Prefer `ieee.numeric_std` semantics (`unsigned`/`signed` with explicit casts) for all new arithmetic and comparisons.
+- When touching logic in a file that still uses legacy numeric packages, migrate only the touched expressions to `numeric_std` style unless a full-file conversion is low risk and can be validated in the same change.
+- Keep behavior identical during incremental migration (no intentional decode/timing/flag changes unless separately scoped and documented).
+
 ## Verification Status
 Static review completed for all CPU files listed above.
 

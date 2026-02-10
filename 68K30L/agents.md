@@ -11,7 +11,11 @@
 - Preserve bus timing semantics expected by `nex030.vhd` (`ASn/DSn/DSACKn/STERMn/RMCn/BERRn`, arbitration pins).
 - Prefer minimal, peripheral-local or CPU-local edits before SoC-wide rewiring in `nex030.vhd`.
 - Maintain VHDL-2008 compatibility.
-- For new CPU code, prefer `numeric_std`-style arithmetic and avoid introducing additional non-standard numeric package usage.
+- Numeric package policy for CPU RTL:
+  - Do not add new `std_logic_unsigned`/`std_logic_arith` dependencies.
+  - Use `numeric_std` (`unsigned`/`signed`) with explicit conversion for new arithmetic/compare logic.
+  - If editing arithmetic in a legacy file, migrate the touched logic to `numeric_std` style in the same change when practical.
+  - Keep incremental migration behavior-preserving unless the task explicitly changes functionality.
 - Do not modify `68881-fpga/` from CPU-only tasks.
 - Maintain self-checking benches in `68K30L/tb/` for behavior changes in covered modules (`ALU`, opcode decoder, bus interface, and top-level smoke path).
 - Keep `68K30L/scripts/run_tests.ps1` and `.github/workflows/ghdl-cpu.yml` synchronized with the current bench list.

@@ -380,12 +380,12 @@ begin
     P_BITFIELD_OP: process(BF_DATA_IN, BF_LOWER_BND, BF_OFFSET, BF_UPPER_BND, BF_WIDTH, BIW_1, OP, OP1)
     variable BF_NZ     : boolean;
     variable BITFIELD : std_logic_vector(39 downto 8);
-    variable BFFFO_CNT : std_logic_vector(5 downto 0);
+    variable BFFFO_CNT : unsigned(5 downto 0);
     begin
         RESULT_BITFIELD <= BF_DATA_IN; -- Default.
         BITFIELD := (others => '0');
         BF_NZ := false;
-        BFFFO_CNT := "000000";
+        BFFFO_CNT := (others => '0');
         case OP is
             when BFCHG =>            
                 for i in RESULT_BITFIELD'range loop
@@ -446,11 +446,11 @@ begin
 
                 for i in BITFIELD' range loop
                     if i - 8 < BF_WIDTH and BITFIELD(i) = '0' and BF_NZ = false then
-                        BFFFO_CNT := BFFFO_CNT + '1';
+                        BFFFO_CNT := BFFFO_CNT + 1;
                     elsif i - 8 < BF_WIDTH then
                         BF_NZ := true;
                     end if;
-                    RESULT_BITFIELD <= (BF_OFFSET + BFFFO_CNT) & x"00";
+                    RESULT_BITFIELD <= std_logic_vector(unsigned(BF_OFFSET) + resize(BFFFO_CNT, BF_OFFSET'length)) & x"00";
                 end loop;
             when BFINS =>
                 for i in RESULT_BITFIELD'range loop
@@ -729,7 +729,7 @@ begin
                 end loop;
                 RESULT(7 downto 0) := unsigned(OP2(7 downto 0));
             when JSR =>
-                RESULT := unsigned(OP1) + "10"; -- Add offset of two to the Pointer of the last extension word.
+                RESULT := unsigned(OP1) + to_unsigned(2, RESULT'length); -- Add offset of two to the Pointer of the last extension word.
             when MOVEQ =>
                 for i in 31 downto 8 loop
                     RESULT(i) := OP1(7);
@@ -758,9 +758,9 @@ begin
                     -- This logic provides the incremented address register in case of ax,(ax)+ addressing mode.
                     -- Thus, the value written to memory is the incremented address.
                     case OP_SIZE is
-                        when LONG => RESULT := unsigned(OP1_SIGNEXT) + "100";
-                        when WORD => RESULT := unsigned(OP1_SIGNEXT) + "010";
-                        when BYTE => RESULT := unsigned(OP1_SIGNEXT) + "001";
+                        when LONG => RESULT := unsigned(OP1_SIGNEXT) + to_unsigned(4, RESULT'length);
+                        when WORD => RESULT := unsigned(OP1_SIGNEXT) + to_unsigned(2, RESULT'length);
+                        when BYTE => RESULT := unsigned(OP1_SIGNEXT) + to_unsigned(1, RESULT'length);
                     end case;
                 else
                     RESULT := unsigned(OP1_SIGNEXT);
@@ -784,7 +784,7 @@ begin
     P_SHFT_CTRL: process
     -- The variable shift or rotate length requires a control
     -- to achieve the correct OPERAND manipulation.
-    variable BIT_CNT    : std_logic_vector(5 downto 0);
+    variable BIT_CNT    : unsigned(5 downto 0);
     begin
         wait until CLK = '1' and CLK' event;
 
@@ -795,7 +795,7 @@ begin
                 SHFT_RDY <= '1';
             elsif SHFT_LOAD = '1' then
                 SHIFT_STATE <= RUN;
-                BIT_CNT := SHIFT_WIDTH_IN;
+                BIT_CNT := unsigned(SHIFT_WIDTH_IN);
                 SHFT_EN <= '1';
             else
                 SHIFT_STATE <= IDLE;
@@ -803,13 +803,13 @@ begin
                 SHFT_EN <= '0';
             end if;
         elsif SHIFT_STATE = RUN then
-            if BIT_CNT = "000001" then
+            if BIT_CNT = to_unsigned(1, BIT_CNT'length) then
                 SHIFT_STATE <= IDLE;
                 SHFT_EN <= '0';
                 SHFT_RDY <= '1';
             else
                 SHIFT_STATE <= RUN;
-                BIT_CNT := BIT_CNT - '1';
+                BIT_CNT := BIT_CNT - 1;
                 SHFT_EN <= '1';
             end if;
         end if;
