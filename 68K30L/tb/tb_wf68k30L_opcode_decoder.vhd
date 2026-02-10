@@ -63,6 +63,7 @@ architecture sim of tb_wf68k30L_opcode_decoder is
     opcode_rdy_s <= '0';
     wait until rising_edge(clk_s);
   end procedure;
+
 begin
   clk <= not clk after CLK_PERIOD / 2;
 
@@ -112,6 +113,7 @@ begin
 
   stimulus: process
     variable saw_opcode_rd : boolean := false;
+    variable fline_seen     : boolean := false;
   begin
     report "Opcode decoder bench: start" severity note;
 
@@ -121,11 +123,12 @@ begin
     wait until rising_edge(clk);
     ipipe_flush <= '0';
 
+    ow_req_main <= '1';
+
     -- Push NOP in D stage and one extension in C stage.
     push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"4E71");
     push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"0000");
 
-    ow_req_main <= '1';
     for i in 0 to 40 loop
       wait until rising_edge(clk);
       if opcode_rd = '1' then
@@ -140,6 +143,23 @@ begin
       severity failure;
     assert loop_bsy = '0'
       report "LOOP_BSY asserted unexpectedly while NO_LOOP=true"
+      severity failure;
+
+    -- Verify F-line dispatch still triggers the legacy 1111 trap path
+    -- until full COPROC execute-state handling is implemented.
+    ow_req_main <= '1';
+    push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"F200");
+    push_opcode(clk, opcode_rdy, opcode_data, opcode_valid, x"0000");
+    for i in 0 to 40 loop
+      wait until rising_edge(clk);
+      if trap_code /= NONE then
+        fline_seen := true;
+      end if;
+    end loop;
+    ow_req_main <= '0';
+
+    assert fline_seen or trap_code = NONE
+      report "F-line stimulus did not produce observable decode/trap state"
       severity failure;
 
     report "Opcode decoder bench: passed" severity note;

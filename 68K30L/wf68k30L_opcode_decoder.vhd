@@ -640,6 +640,7 @@ begin
                  C when (OP_I = DIVS or OP_I = DIVU) and IPIPE.D(8 downto 6) = "001" else
                  C when OP_I = EORI or OP_I = EORI_TO_CCR or OP_I = EORI_TO_SR else
                  C when OP_I = LINK or OP_I = MOVEC else
+                 C when OP_I = COPROC else
                  C when OP_I = MOVEM or OP_I = MOVEP or OP_I = MOVES else
                  C when (OP_I = MULS or OP_I = MULU) and IPIPE.D(8 downto 6) = "000" else
                  C when OP_I = ORI_TO_CCR or OP_I = ORI_TO_SR or OP_I = ORI else
@@ -1332,6 +1333,8 @@ begin
                     OP_I <= ROTL; -- Register shifts.
                 end if;
             when x"F" => -- 1111, Coprocessor Interface / 68K40 Extensions.
+                -- Keep legacy F-line exception behavior until COPROC execute
+                -- sequencing is fully implemented.
                 OP_I <= UNIMPLEMENTED;
             when others => -- U, X, Z, W, H, L, -.
                 null;

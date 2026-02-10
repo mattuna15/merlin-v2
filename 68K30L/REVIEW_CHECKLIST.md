@@ -101,6 +101,14 @@ This checklist captures work identified by the static CPU review plus local tool
   Evidence: `68K30L/tb/tb_wf68k30L_top_smoke.vhd`, `68K30L/wf68k30L_top.vhd`  
   Acceptance: Top bench executes a deterministic instruction stream and validates expected bus/control milestones.
 
+
+- [ ] **CPU-009**
+  Priority: `P0`  
+  Area: `coprocessor/interface`  
+  Action: Complete MC68881 BIU coprocessor integration sequencing (FMOVE classes, FSAVE/FRESTORE, Illegal fallback on no-response, and exception/FPIAR synchronization).  
+  Evidence: `68K30L/wf68k30L_opcode_decoder.vhd`, `68K30L/wf68k30L_control.vhd`, `68K30L/wf68k30L_top.vhd`, `68K30L/MC68881_BIU_CHECKLIST.md`  
+  Acceptance: CPU executes representative F-line instruction streams against an external MC68881-compatible BIU model with correct exception/reporting behavior.
+
 ## Suggested Execution Order
 1. `CPU-003` licensing provenance
 2. `CPU-005` package declaration cleanup plan
