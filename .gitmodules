@@ -1,0 +1,3 @@
+[submodule "68881-fpga"]
+	path = 68881-fpga
+	url = https://github.com/mattuna15/68881-fpga.git

@@ -8,11 +8,4 @@ Currently has
 - [X] Flashrom read/xip using QUAD SPI. This code is being built from scratch to support the Flash Rom on digilent boards (such as Nexys Video)
 - [X] CPM68k working with ramdrive and existing images
 - [X] Easy68k compatible console io  
-- [ ] [WIP] Integrate VGA/HDMI Controller from Merlin vga project
-      
-TO DO
-- [ ] Keyboard, Mouse, SD Card, Network
-
-
-![image](https://github.com/mattuna15/merlin-v2/assets/16086727/93461986-8602-4a06-a2a1-92b2070e981f)
 
