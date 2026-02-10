@@ -367,6 +367,7 @@ signal DATA_RD_I            : bit;
 signal DATA_WR_I            : bit;
 signal EW_RDY               : bit;
 signal COPROC_EW_FORMAT     : COPROC_EW_FORMAT_TYPE;
+signal COPROC_OPWORD        : std_logic_vector(15 downto 0);
 signal COPROC_MEM_EA        : bit;
 signal COPROC_RD_TRANSFER   : bit;
 signal COPROC_WR_TRANSFER   : bit;
@@ -498,7 +499,8 @@ begin
     RD_RDY <= DATA_RDY when READ_CYCLE = '1' else '0';
     WR_RDY <= DATA_RDY when WRITE_CYCLE = '1' else '0';
 
-    COPROC_EW_FORMAT <= DECODE_COPROC_EW_FORMAT(BIW_0, EXT_WORD);
+    COPROC_OPWORD <= "11" & BIW_0;
+    COPROC_EW_FORMAT <= DECODE_COPROC_EW_FORMAT(COPROC_OPWORD, EXT_WORD);
     COPROC_MEM_EA <= '1' when BIW_0(5 downto 3) /= "000" and BIW_0(5 downto 3) /= "001" else '0';
     COPROC_WR_TRANSFER <= '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_EW_FORMAT = COPROC_EW_FSAVE_FRESTORE else
                          '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_EW_FORMAT = COPROC_EW_FMOVE and EXT_WORD(13) = '1' else '0';
