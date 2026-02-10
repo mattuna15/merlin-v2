@@ -1333,9 +1333,7 @@ begin
                     OP_I <= ROTL; -- Register shifts.
                 end if;
             when x"F" => -- 1111, Coprocessor Interface / 68K40 Extensions.
-                -- Keep legacy F-line exception behavior until COPROC execute
-                -- sequencing is fully implemented.
-                OP_I <= UNIMPLEMENTED;
+                OP_I <= COPROC;
             when others => -- U, X, Z, W, H, L, -.
                 null;
             end case;

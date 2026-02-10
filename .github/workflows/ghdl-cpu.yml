@@ -26,6 +26,7 @@ jobs:
             68K30L/wf68k30L_top.vhd \
             68K30L/tb/tb_wf68k30L_alu.vhd \
             68K30L/tb/tb_wf68k30L_opcode_decoder.vhd \
+            68K30L/tb/tb_wf68k30L_coproc_decode.vhd \
             68K30L/tb/tb_wf68k30L_bus_interface.vhd \
             68K30L/tb/tb_wf68k30L_top_smoke.vhd
       - name: Run tb_wf68k30L_alu
@@ -36,6 +37,10 @@ jobs:
         run: |
           ghdl -e --std=08 --ieee=synopsys tb_wf68k30L_opcode_decoder
           ghdl -r --std=08 --ieee=synopsys tb_wf68k30L_opcode_decoder --assert-level=error
+      - name: Run tb_wf68k30L_coproc_decode
+        run: |
+          ghdl -e --std=08 --ieee=synopsys tb_wf68k30L_coproc_decode
+          ghdl -r --std=08 --ieee=synopsys tb_wf68k30L_coproc_decode --assert-level=error
       - name: Run tb_wf68k30L_bus_interface
         run: |
           ghdl -e --std=08 --ieee=synopsys tb_wf68k30L_bus_interface
@@ -44,4 +49,3 @@ jobs:
         run: |
           ghdl -e --std=08 --ieee=synopsys tb_wf68k30L_top_smoke
           ghdl -r --std=08 --ieee=synopsys tb_wf68k30L_top_smoke --assert-level=error
-
