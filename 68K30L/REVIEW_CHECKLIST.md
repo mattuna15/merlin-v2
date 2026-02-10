@@ -106,7 +106,7 @@ This checklist captures work identified by the static CPU review plus local tool
   Priority: `P0`  
   Area: `coprocessor/interface`  
   Action: Complete MC68881 BIU coprocessor integration sequencing (FMOVE classes, FSAVE/FRESTORE, Illegal fallback on no-response, and exception/FPIAR synchronization).  
-  Evidence: `68K30L/wf68k30L_pkg.vhd`, `68K30L/wf68k30L_opcode_decoder.vhd`, `68K30L/wf68k30L_control.vhd`, `68K30L/wf68k30L_top.vhd`, `68K30L/tb/tb_wf68k30L_coproc_decode.vhd`, `68K30L/MC68881_BIU_CHECKLIST.md`  
+  Evidence: `68K30L/wf68k30L_pkg.vhd`, `68K30L/wf68k30L_opcode_decoder.vhd`, `68K30L/wf68k30L_control.vhd`, `68K30L/wf68k30L_top.vhd`, `68K30L/tb/tb_wf68k30L_coproc_decode.vhd`, `68K30L/tb/tb_wf68k30L_top_coproc_bus.vhd`, `68K30L/MC68881_BIU_CHECKLIST.md`  
   Acceptance: CPU executes representative F-line instruction streams against an external MC68881-compatible BIU model with correct exception/reporting behavior.
 
 ## Suggested Execution Order

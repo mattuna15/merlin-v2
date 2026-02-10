@@ -366,6 +366,10 @@ signal BIW_1_WB             : std_logic_vector(15 downto 0);
 signal DATA_RD_I            : bit;
 signal DATA_WR_I            : bit;
 signal EW_RDY               : bit;
+signal COPROC_EW_FORMAT     : COPROC_EW_FORMAT_TYPE;
+signal COPROC_MEM_EA        : bit;
+signal COPROC_RD_TRANSFER   : bit;
+signal COPROC_WR_TRANSFER   : bit;
 signal INIT_ENTRY           : bit;
 signal LOOP_EXIT_I          : bit;
 signal MEM_INDIRECT         : bit;
@@ -494,6 +498,13 @@ begin
     RD_RDY <= DATA_RDY when READ_CYCLE = '1' else '0';
     WR_RDY <= DATA_RDY when WRITE_CYCLE = '1' else '0';
 
+    COPROC_EW_FORMAT <= DECODE_COPROC_EW_FORMAT(BIW_0, EXT_WORD);
+    COPROC_MEM_EA <= '1' when BIW_0(5 downto 3) /= "000" and BIW_0(5 downto 3) /= "001" else '0';
+    COPROC_WR_TRANSFER <= '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_EW_FORMAT = COPROC_EW_FSAVE_FRESTORE else
+                         '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_EW_FORMAT = COPROC_EW_FMOVE and EXT_WORD(13) = '1' else '0';
+    COPROC_RD_TRANSFER <= '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_WR_TRANSFER = '0' and
+                                   (COPROC_EW_FORMAT = COPROC_EW_FMOVE or COPROC_EW_FORMAT = COPROC_EW_ARITH_TRANSC or COPROC_EW_FORMAT = COPROC_EW_FSAVE_FRESTORE) else '0';
+
     INIT_ENTRY <= '1' when FETCH_STATE /= INIT_EXEC_WB and NEXT_FETCH_STATE = INIT_EXEC_WB else '0';
     
     DATA_RD <= DATA_RD_I;
@@ -502,11 +513,13 @@ begin
                  '0' when ADR_IN_USE = '1' else -- Avoid data hazards.
                  '0' when DATA_RDY = '1' or MEMADR_RDY = '1' else
                  '1' when FETCH_STATE = FETCH_MEMADR else
-                 '1' when FETCH_STATE = FETCH_OPERAND else '0';
+                 '1' when FETCH_STATE = FETCH_OPERAND and OP /= COPROC else
+                 '1' when FETCH_STATE = FETCH_OPERAND and COPROC_RD_TRANSFER = '1' else '0';
 
     DATA_WR <= DATA_WR_I;
     DATA_WR_I <= '0' when READ_CYCLE = '1' else -- Do not write during a read cycle.
                  '0' when DATA_RDY = '1' else
+                 '1' when FETCH_STATE = FETCH_OPERAND and COPROC_WR_TRANSFER = '1' else
                  '1' when EXEC_WB_STATE = WRITE_DEST else '0';
 
     RMC <= '1' when (OP = CAS or OP = CAS2 or OP = TAS) and FETCH_STATE /= START_OP else '0';
@@ -1990,7 +2003,11 @@ begin
                 -- Fetch exactly one coprocessor extension word without
                 -- entering indexed-EA extension decode paths.
                 if EW_ACK = '1' or EW_RDY = '1' then
-                    NEXT_FETCH_STATE <= INIT_EXEC_WB;
+                    if COPROC_MEM_EA = '1' then
+                        NEXT_FETCH_STATE <= CALC_AEFF;
+                    else
+                        NEXT_FETCH_STATE <= INIT_EXEC_WB;
+                    end if;
                 else
                     NEXT_FETCH_STATE <= FETCH_COPROC_EW;
                 end if;
@@ -2123,8 +2140,11 @@ begin
             when CALC_AEFF =>
                 NEXT_FETCH_STATE <= FETCH_OPERAND; -- One CLK calculation delay.
             when FETCH_OPERAND =>
-                if RD_RDY = '1' then
+                if (OP = COPROC and COPROC_WR_TRANSFER = '1' and WR_RDY = '1') or
+                   (RD_RDY = '1' and (OP /= COPROC or COPROC_RD_TRANSFER = '1')) then
                     case OP is
+                        when COPROC =>
+                            NEXT_FETCH_STATE <= INIT_EXEC_WB;
                         when ABCD | ADDX | SBCD | SUBX =>
                             if PHASE2 = false then
                                 NEXT_FETCH_STATE <= CALC_AEFF;
