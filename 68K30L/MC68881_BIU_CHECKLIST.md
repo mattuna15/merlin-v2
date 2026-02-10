@@ -3,10 +3,10 @@
 This checklist tracks the remaining work to reach full MC68020/030 + MC68881 BIU-compatible behavior.
 
 ## Implemented in this change
-- [x] F-line (`IR[15:12]=1111`) opcodes are dispatched to a dedicated `COPROC` opcode class in the decoder.
-- [x] Decoder no longer raises an immediate trap for all F-line words; dispatch proceeds through the control path.
-- [x] Control path enters extension-word fetch sequencing for `COPROC` operations.
-- [x] Function-code path documents and preserves bus-only coprocessor interfacing (no custom cp handshake pins).
+- [x] A dedicated `COPROC` opcode class exists in shared CPU opcode typing for staged integration work.
+- [x] Legacy F-line trap behavior is intentionally preserved until dedicated `COPROC` execute-state sequencing is implemented.
+- [x] Control path explicitly avoids reusing generic `FETCH_EXWORD_1` indexed-address extension parsing for `COPROC`.
+- [x] Function-code path documents bus-only coprocessor interfacing intent (no custom cp handshake pins).
 
 ## Next steps (required for full architectural compatibility)
 - [ ] Decode full coprocessor extension-word formats (FMOVE, FSAVE/FRESTORE, arithmetic/transcendental, FP branches/traps).
