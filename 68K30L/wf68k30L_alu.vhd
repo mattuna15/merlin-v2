@@ -22,7 +22,7 @@
 ----                                                                ----
 ------------------------------------------------------------------------
 ----                                                                ----
----- Copyright © 2014... Wolfgang Foerster - Inventronik GmbH.      ----
+---- Copyright Â© 2014... Wolfgang Foerster - Inventronik GmbH.      ----
 ----                                                                ----
 ---- This documentation describes Open Hardware and is licensed     ----
 ---- under the CERN OHL v. 1.2. You may redistribute and modify     ----
@@ -636,42 +636,42 @@ begin
     P_INTOP: process(OP, OP1, OP1_SIGNEXT, OP2, OP2_SIGNEXT, ADR_MODE, X_IN, RESULT_INTOP)
     -- The integer arithmetics ADD, SUB, NEG and CMP in their different variations are modelled here.
     variable X_IN_I         : Std_Logic_Vector(0 downto 0);
-    variable RESULT         : unsigned(31 downto 0);
+    variable RESULT_VAR     : unsigned(31 downto 0);
     begin
         X_IN_I(0) := X_IN; -- Extended Flag.
         case OP is
             when ADDA => -- No sign extension for the destination.
-                RESULT := unsigned(OP2) + unsigned(OP1_SIGNEXT);
+                RESULT_VAR := unsigned(OP2) + unsigned(OP1_SIGNEXT);
             when ADDQ =>
                 case ADR_MODE is
-                    when "001" => RESULT := unsigned(OP2) + unsigned(OP1); -- No sign extension for address destination.
-                    when others => RESULT := unsigned(OP2_SIGNEXT) + unsigned(OP1);
+                    when "001" => RESULT_VAR := unsigned(OP2) + unsigned(OP1); -- No sign extension for address destination.
+                    when others => RESULT_VAR := unsigned(OP2_SIGNEXT) + unsigned(OP1);
                 end case;
             when SUBQ =>
                 case ADR_MODE is
-                    when "001" => RESULT := unsigned(OP2) - unsigned(OP1); -- No sign extension for address destination.
-                    when others => RESULT := unsigned(OP2_SIGNEXT) - unsigned(OP1);
+                    when "001" => RESULT_VAR := unsigned(OP2) - unsigned(OP1); -- No sign extension for address destination.
+                    when others => RESULT_VAR := unsigned(OP2_SIGNEXT) - unsigned(OP1);
                 end case;
             when ADD | ADDI =>
-                RESULT := unsigned(OP2_SIGNEXT) + unsigned(OP1_SIGNEXT);
+                RESULT_VAR := unsigned(OP2_SIGNEXT) + unsigned(OP1_SIGNEXT);
             when ADDX =>
-                RESULT := unsigned(OP2_SIGNEXT) + unsigned(OP1_SIGNEXT) + unsigned(X_IN_I);
+                RESULT_VAR := unsigned(OP2_SIGNEXT) + unsigned(OP1_SIGNEXT) + unsigned(X_IN_I);
             when CMPA | DBcc | SUBA => -- No sign extension for the destination.
-                RESULT := unsigned(OP2) - unsigned(OP1_SIGNEXT);
+                RESULT_VAR := unsigned(OP2) - unsigned(OP1_SIGNEXT);
             when CAS | CAS2 | CMP | CMPI | CMPM | SUB | SUBI =>
-                RESULT := unsigned(OP2_SIGNEXT) - unsigned(OP1_SIGNEXT);
+                RESULT_VAR := unsigned(OP2_SIGNEXT) - unsigned(OP1_SIGNEXT);
             when SUBX =>
-                RESULT := unsigned(OP2_SIGNEXT) - unsigned(OP1_SIGNEXT) - unsigned(X_IN_I);
+                RESULT_VAR := unsigned(OP2_SIGNEXT) - unsigned(OP1_SIGNEXT) - unsigned(X_IN_I);
             when NEG =>
-                RESULT := unsigned(OP1_SIGNEXT) - unsigned(OP2_SIGNEXT);
+                RESULT_VAR := unsigned(OP1_SIGNEXT) - unsigned(OP2_SIGNEXT);
             when NEGX =>
-                RESULT := unsigned(OP1_SIGNEXT) - unsigned(OP2_SIGNEXT) - unsigned(X_IN_I);
+                RESULT_VAR := unsigned(OP1_SIGNEXT) - unsigned(OP2_SIGNEXT) - unsigned(X_IN_I);
             when CLR =>
-                RESULT := (others => '0');
+                RESULT_VAR := (others => '0');
             when others =>
-                RESULT := (others => '0'); -- Don't care.
+                RESULT_VAR := (others => '0'); -- Don't care.
         end case;
-        RESULT_INTOP <= Std_Logic_Vector(RESULT);
+        RESULT_INTOP <= Std_Logic_Vector(RESULT_VAR);
     end process P_INTOP;
 
     P_LOGOP: process(OP, OP1, OP2)
@@ -698,77 +698,77 @@ begin
 
     P_OTHERS: process(ADR_MODE, ALU_COND_I, BIW_0, BIW_1, OP, OP1, OP2, OP3, OP1_SIGNEXT, OP_SIZE, HILOn)
     -- This process provides the calculation for special operations.
-    variable RESULT : unsigned(31 downto 0);
+    variable RESULT_VAR : unsigned(31 downto 0);
     begin
-        RESULT := (others => '0');
+        RESULT_VAR := (others => '0');
         case OP is
             when CAS =>
-                RESULT := unsigned(OP2); -- Destination operand.
+                RESULT_VAR := unsigned(OP2); -- Destination operand.
             when CAS2 => -- Destination operands.
                 case HILOn is
-                    when '1' => RESULT := unsigned(OP3);
-                    when others => RESULT := unsigned(OP2);
+                    when '1' => RESULT_VAR := unsigned(OP3);
+                    when others => RESULT_VAR := unsigned(OP2);
                 end case;
             when EXT =>
                 case BIW_0(8 downto 6) is
                     when "011" =>
                         for i in 31 downto 16 loop
-                            RESULT(i) := OP2(15);
+                            RESULT_VAR(i) := OP2(15);
                         end loop;
-                        RESULT(15 downto 0) := unsigned(OP2(15 downto 0));
+                        RESULT_VAR(15 downto 0) := unsigned(OP2(15 downto 0));
                     when others => -- Word.
                         for i in 15 downto 8 loop
-                            RESULT(i) := OP2(7);
+                            RESULT_VAR(i) := OP2(7);
                         end loop;
-                        RESULT(31 downto 16) := unsigned(OP2(31 downto 16));
-                        RESULT(7 downto 0) := unsigned(OP2(7 downto 0));
+                        RESULT_VAR(31 downto 16) := unsigned(OP2(31 downto 16));
+                        RESULT_VAR(7 downto 0) := unsigned(OP2(7 downto 0));
                 end case;
             when EXTB =>
                 for i in 31 downto 8 loop
-                    RESULT(i) := OP2(7);
+                    RESULT_VAR(i) := OP2(7);
                 end loop;
-                RESULT(7 downto 0) := unsigned(OP2(7 downto 0));
+                RESULT_VAR(7 downto 0) := unsigned(OP2(7 downto 0));
             when JSR =>
-                RESULT := unsigned(OP1) + to_unsigned(2, RESULT'length); -- Add offset of two to the Pointer of the last extension word.
+                RESULT_VAR := unsigned(OP1) + to_unsigned(2, RESULT'length); -- Add offset of two to the Pointer of the last extension word.
             when MOVEQ =>
                 for i in 31 downto 8 loop
-                    RESULT(i) := OP1(7);
+                    RESULT_VAR(i) := OP1(7);
                 end loop;
-                RESULT(7 downto 0) := unsigned(OP1(7 downto 0));
+                RESULT_VAR(7 downto 0) := unsigned(OP1(7 downto 0));
             when Scc =>
                 if ALU_COND_I = true then
-                    RESULT := (others => '1');
+                    RESULT_VAR := (others => '1');
                 else
-                    RESULT := (others => '0');
+                    RESULT_VAR := (others => '0');
                 end if;
             when SWAP =>
-                RESULT := unsigned(OP2(15 downto 0)) & unsigned(OP2(31 downto 16));
+                RESULT_VAR := unsigned(OP2(15 downto 0)) & unsigned(OP2(31 downto 16));
             when TAS =>
-                RESULT := x"000000" & '1' & unsigned(OP2(6 downto 0)); -- Set the MSB.
+                RESULT_VAR := x"000000" & '1' & unsigned(OP2(6 downto 0)); -- Set the MSB.
             when PACK =>
-                RESULT := x"0000" & (unsigned(OP1(15 downto 0)) + unsigned(OP2(15 downto 0)));
+                RESULT_VAR := x"0000" & (unsigned(OP1(15 downto 0)) + unsigned(OP2(15 downto 0)));
             when UNPK =>
-                RESULT := x"0000" & (unsigned(OP1(15 downto 0)) + unsigned(x"0" & OP2(7 downto 4) & x"0" & OP2(3 downto 0)));
+                RESULT_VAR := x"0000" & (unsigned(OP1(15 downto 0)) + unsigned(x"0" & OP2(7 downto 4) & x"0" & OP2(3 downto 0)));
             when LINK | TST =>
-                RESULT := unsigned(OP2);
+                RESULT_VAR := unsigned(OP2);
             when MOVEA | MOVEM =>
-                RESULT := unsigned(OP1_SIGNEXT);
+                RESULT_VAR := unsigned(OP1_SIGNEXT);
             when MOVES =>
                 if ADR_MODE = "011" and BIW_1(15) = '1' and BIW_1(11) = '1' and BIW_1(14 downto 12) = BIW_0(2 downto 0) then
                     -- This logic provides the incremented address register in case of ax,(ax)+ addressing mode.
                     -- Thus, the value written to memory is the incremented address.
                     case OP_SIZE is
-                        when LONG => RESULT := unsigned(OP1_SIGNEXT) + to_unsigned(4, RESULT'length);
-                        when WORD => RESULT := unsigned(OP1_SIGNEXT) + to_unsigned(2, RESULT'length);
-                        when BYTE => RESULT := unsigned(OP1_SIGNEXT) + to_unsigned(1, RESULT'length);
+                        when LONG => RESULT_VAR := unsigned(OP1_SIGNEXT) + to_unsigned(4, RESULT'length);
+                        when WORD => RESULT_VAR := unsigned(OP1_SIGNEXT) + to_unsigned(2, RESULT'length);
+                        when BYTE => RESULT_VAR := unsigned(OP1_SIGNEXT) + to_unsigned(1, RESULT'length);
                     end case;
                 else
-                    RESULT := unsigned(OP1_SIGNEXT);
+                    RESULT_VAR := unsigned(OP1_SIGNEXT);
                 end if;
             when others => -- MOVE_FROM_CCR, MOVE_TO_CCR, MOVE_FROM_SR, MOVE_TO_SR, MOVE, MOVEC, MOVEP, STOP.
-                RESULT := unsigned(OP1);
+                RESULT_VAR := unsigned(OP1);
         end case;
-        RESULT_OTHERS <= Std_Logic_Vector(RESULT);
+        RESULT_OTHERS <= Std_Logic_Vector(RESULT_VAR);
     end process P_OTHERS;
 
     SHFT_LOAD <= '1' when ALU_INIT = '1' and (OP_IN = ASL or OP_IN = ASR) else
