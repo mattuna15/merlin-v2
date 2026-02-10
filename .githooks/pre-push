@@ -24,6 +24,7 @@ echo "Running 68K30L GHDL tests before push..."
   68K30L/wf68k30L_top.vhd \
   68K30L/tb/tb_wf68k30L_alu.vhd \
   68K30L/tb/tb_wf68k30L_opcode_decoder.vhd \
+  68K30L/tb/tb_wf68k30L_coproc_decode.vhd \
   68K30L/tb/tb_wf68k30L_bus_interface.vhd \
   68K30L/tb/tb_wf68k30L_top_smoke.vhd
 
@@ -33,6 +34,9 @@ echo "Running 68K30L GHDL tests before push..."
 "$GHDL_EXE" -e --std=08 --ieee=synopsys tb_wf68k30L_opcode_decoder
 "$GHDL_EXE" -r --std=08 --ieee=synopsys tb_wf68k30L_opcode_decoder --assert-level=error
 
+"$GHDL_EXE" -e --std=08 --ieee=synopsys tb_wf68k30L_coproc_decode
+"$GHDL_EXE" -r --std=08 --ieee=synopsys tb_wf68k30L_coproc_decode --assert-level=error
+
 "$GHDL_EXE" -e --std=08 --ieee=synopsys tb_wf68k30L_bus_interface
 "$GHDL_EXE" -r --std=08 --ieee=synopsys tb_wf68k30L_bus_interface --assert-level=error
 
@@ -40,4 +44,3 @@ echo "Running 68K30L GHDL tests before push..."
 "$GHDL_EXE" -r --std=08 --ieee=synopsys tb_wf68k30L_top_smoke --assert-level=error
 
 echo "68K30L GHDL tests passed."
-

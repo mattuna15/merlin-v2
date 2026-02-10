@@ -14,7 +14,7 @@
 ----                                                                ----
 ------------------------------------------------------------------------
 ----                                                                ----
----- Copyright © 2014... Wolfgang Foerster - Inventronik GmbH.      ----
+---- Copyright Â© 2014... Wolfgang Foerster - Inventronik GmbH.      ----
 ----                                                                ----
 ---- This documentation describes Open Hardware and is licensed     ----
 ---- under the CERN OHL v. 1.2. You may redistribute and modify     ----
@@ -48,8 +48,8 @@
 -- Revision 2K21A 20211224 WF
 --   The SSP_DEC can now handle both supervisor stack pointers.
 --   Fixed a data hazard in the effective address calculation.
---   Fixed index register suppressing in 68K20+ addressing modes, thanks to Markus Fröschle and Udo Matthe.
---   Fixed base register suppressing in 68K20+ addressing modes thanks to Udo Matthe and Markus Fröschle.
+--   Fixed index register suppressing in 68K20+ addressing modes, thanks to Markus FrÃ¶schle and Udo Matthe.
+--   Fixed base register suppressing in 68K20+ addressing modes thanks to Udo Matthe and Markus FrÃ¶schle.
 -- 
 
 use work.WF68K30L_PKG.all;
@@ -208,6 +208,8 @@ begin
 
     AR_OUT_1 <= AR_OUT_1_I;
     AR_OUT_2 <= AR_OUT_2_I;
+    DFC <= DFC_REG;
+    SFC <= SFC_REG;
 
     ADR_IN_USE <= '1' when ADR_WB(32) = '1' and ADR_WB(31 downto 2) = ADR_EFF_I(31 downto 2) else -- Actual long word address.
                   '1' when ADR_WB(32) = '1' and ADR_WB(31 downto 2) - '1' = ADR_EFF_I(31 downto 2) else -- Lock a misaligned access.
@@ -669,19 +671,15 @@ begin
     FCODES: process
     -- These flip flops provide the alternate function
     -- code registers.
-    variable SFC_REG : std_logic_vector(2 downto 0);
-    variable DFC_REG : std_logic_vector(2 downto 0);
     begin
         wait until CLK = '1' and CLK' event;
         if DFC_WR = '1' then
-            DFC_REG := AR_IN_1(2 downto 0);
+            DFC_REG <= AR_IN_1(2 downto 0);
         end if;
         --
         if SFC_WR = '1' then
-            SFC_REG := AR_IN_1(2 downto 0);
+            SFC_REG <= AR_IN_1(2 downto 0);
         end if;
         --
-        DFC <= DFC_REG;
-        SFC <= SFC_REG;
     end process FCODES;
 end BEHAVIOR;

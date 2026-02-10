@@ -47,6 +47,21 @@ type OP_68K is (ABCD, ADD, ADDA, ADDI, ADDQ, ADDX, AND_B, ANDI, ANDI_TO_CCR, AND
 
 type TRAPTYPE_OPC is(NONE, T_1010, T_1111, T_ILLEGAL, T_TRAP, T_PRIV, T_RTE); -- None is the first entry and default.
 
+type COPROC_EW_FORMAT_TYPE is (
+    COPROC_EW_NONE,
+    COPROC_EW_FMOVE,
+    COPROC_EW_FSAVE_FRESTORE,
+    COPROC_EW_ARITH_TRANSC,
+    COPROC_EW_BRANCH,
+    COPROC_EW_TRAP,
+    COPROC_EW_UNKNOWN
+);
+
+function DECODE_COPROC_EW_FORMAT(
+    OPWORD      : std_logic_vector(15 downto 0);
+    EXT_WORD    : std_logic_vector(15 downto 0)
+) return COPROC_EW_FORMAT_TYPE;
+
 component WF68K30L_ADDRESS_REGISTERS
     port (
         CLK                 : in std_logic;
@@ -458,3 +473,35 @@ component WF68K30L_OPCODE_DECODER
     );
 end component;
 end WF68K30L_PKG;
+
+package body WF68K30L_PKG is
+    function DECODE_COPROC_EW_FORMAT(
+        OPWORD      : std_logic_vector(15 downto 0);
+        EXT_WORD    : std_logic_vector(15 downto 0)
+    ) return COPROC_EW_FORMAT_TYPE is
+    begin
+        if OPWORD(15 downto 12) /= x"F" then
+            return COPROC_EW_NONE;
+        end if;
+
+        case OPWORD(8 downto 6) is
+            when "111" =>
+                return COPROC_EW_FSAVE_FRESTORE;
+            when "010" | "110" =>
+                return COPROC_EW_BRANCH;
+            when "011" =>
+                return COPROC_EW_TRAP;
+            when "000" =>
+                case EXT_WORD(15 downto 13) is
+                    when "000" | "010" | "011" | "100" | "110" =>
+                        return COPROC_EW_FMOVE;
+                    when "001" | "101" | "111" =>
+                        return COPROC_EW_ARITH_TRANSC;
+                    when others =>
+                        return COPROC_EW_UNKNOWN;
+                end case;
+            when others =>
+                return COPROC_EW_UNKNOWN;
+        end case;
+    end function;
+end package body WF68K30L_PKG;

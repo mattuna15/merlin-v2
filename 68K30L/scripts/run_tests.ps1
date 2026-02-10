@@ -42,6 +42,7 @@ $AnalyzeArgs = @(
   '68K30L/wf68k30L_top.vhd',
   '68K30L/tb/tb_wf68k30L_alu.vhd',
   '68K30L/tb/tb_wf68k30L_opcode_decoder.vhd',
+  '68K30L/tb/tb_wf68k30L_coproc_decode.vhd',
   '68K30L/tb/tb_wf68k30L_bus_interface.vhd',
   '68K30L/tb/tb_wf68k30L_top_smoke.vhd'
 )
@@ -50,6 +51,7 @@ Invoke-Ghdl -Args $AnalyzeArgs
 $benches = @(
   'tb_wf68k30L_alu',
   'tb_wf68k30L_opcode_decoder',
+  'tb_wf68k30L_coproc_decode',
   'tb_wf68k30L_bus_interface',
   'tb_wf68k30L_top_smoke'
 )
