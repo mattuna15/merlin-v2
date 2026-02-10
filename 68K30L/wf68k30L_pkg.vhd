@@ -487,7 +487,7 @@ package body WF68K30L_PKG is
         case OPWORD(8 downto 6) is
             when "111" =>
                 return COPROC_EW_FSAVE_FRESTORE;
-            when "100" | "110" =>
+            when "010" | "110" =>
                 return COPROC_EW_BRANCH;
             when "011" =>
                 return COPROC_EW_TRAP;
