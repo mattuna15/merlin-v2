@@ -366,6 +366,11 @@ signal BIW_1_WB             : std_logic_vector(15 downto 0);
 signal DATA_RD_I            : bit;
 signal DATA_WR_I            : bit;
 signal EW_RDY               : bit;
+signal COPROC_EW_FORMAT     : COPROC_EW_FORMAT_TYPE;
+signal COPROC_OPWORD        : std_logic_vector(15 downto 0);
+signal COPROC_MEM_EA        : bit;
+signal COPROC_RD_TRANSFER   : bit;
+signal COPROC_WR_TRANSFER   : bit;
 signal INIT_ENTRY           : bit;
 signal LOOP_EXIT_I          : bit;
 signal MEM_INDIRECT         : bit;
@@ -494,6 +499,15 @@ begin
     RD_RDY <= DATA_RDY when READ_CYCLE = '1' else '0';
     WR_RDY <= DATA_RDY when WRITE_CYCLE = '1' else '0';
 
+    COPROC_OPWORD <= "11" & BIW_0;
+    COPROC_EW_FORMAT <= DECODE_COPROC_EW_FORMAT(COPROC_OPWORD, EXT_WORD);
+    COPROC_MEM_EA <= '1' when BIW_0(5 downto 3) /= "000" and BIW_0(5 downto 3) /= "001" and
+                              not (BIW_0(5 downto 3) = "111" and BIW_0(2) = '1') else '0';
+    COPROC_WR_TRANSFER <= '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_EW_FORMAT = COPROC_EW_FSAVE_FRESTORE and EXT_WORD(13) = '1' else
+                         '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_EW_FORMAT = COPROC_EW_FMOVE and EXT_WORD(13) = '1' else '0';
+    COPROC_RD_TRANSFER <= '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_WR_TRANSFER = '0' and
+                                   (COPROC_EW_FORMAT = COPROC_EW_FMOVE or COPROC_EW_FORMAT = COPROC_EW_ARITH_TRANSC or COPROC_EW_FORMAT = COPROC_EW_FSAVE_FRESTORE) else '0';
+
     INIT_ENTRY <= '1' when FETCH_STATE /= INIT_EXEC_WB and NEXT_FETCH_STATE = INIT_EXEC_WB else '0';
     
     DATA_RD <= DATA_RD_I;
@@ -502,11 +516,13 @@ begin
                  '0' when ADR_IN_USE = '1' else -- Avoid data hazards.
                  '0' when DATA_RDY = '1' or MEMADR_RDY = '1' else
                  '1' when FETCH_STATE = FETCH_MEMADR else
-                 '1' when FETCH_STATE = FETCH_OPERAND else '0';
+                 '1' when FETCH_STATE = FETCH_OPERAND and OP /= COPROC else
+                 '1' when FETCH_STATE = FETCH_OPERAND and COPROC_RD_TRANSFER = '1' else '0';
 
     DATA_WR <= DATA_WR_I;
     DATA_WR_I <= '0' when READ_CYCLE = '1' else -- Do not write during a read cycle.
                  '0' when DATA_RDY = '1' else
+                 '1' when FETCH_STATE = FETCH_OPERAND and COPROC_WR_TRANSFER = '1' else
                  '1' when EXEC_WB_STATE = WRITE_DEST else '0';
 
     RMC <= '1' when (OP = CAS or OP = CAS2 or OP = TAS) and FETCH_STATE /= START_OP else '0';
@@ -647,6 +663,7 @@ begin
                    BIW_0(2 downto 0) when OP = BFEXTS or OP = BFEXTU or OP = BFFFO or OP = BFINS or OP = BFSET or OP = BFTST else 
                    BIW_0(2 downto 0) when OP = CAS or OP = CHK or OP = CHK2 or OP = CLR or OP = CMP or OP = CMPA or OP = CMPI or OP = CMPM or OP = CMP2 else
                    BIW_0(2 downto 0) when OP = DIVS or OP = DIVU or OP = EOR or OP = EORI or OP = EXG or OP = JMP or OP = JSR or OP = LEA or OP = LINK or OP = LSL or OP = LSR else
+                   BIW_0(2 downto 0) when OP = COPROC else
                    BIW_0(2 downto 0) when OP = MOVE or OP = MOVEA or OP = MOVE_FROM_CCR or OP = MOVE_FROM_SR or OP = MOVE_TO_CCR or OP = MOVE_TO_SR else
                    BIW_0(2 downto 0) when OP = MOVE_USP or OP = MOVEM or OP = MOVEP or OP = MOVES or OP = MULS or OP = MULU else
                    BIW_0(2 downto 0) when OP = NBCD or OP = NEG or OP = NEGX or OP = NOT_B or OP = OR_B or OP = ORI or OP = PACK or OP = PEA else
@@ -712,12 +729,14 @@ begin
               '1' when OP = MOVEA and ADR_MODE_I = "011" and FETCH_STATE = INIT_EXEC_WB and NEXT_FETCH_STATE /= INIT_EXEC_WB else
               '1' when OP = MOVEM and ADR_MODE_I = "011" and ALU_INIT_I = '1' else
               '1' when OP = MOVES and ADR_MODE_I = "011" and ALU_INIT_I = '1' else 
+              '1' when OP = COPROC and ADR_MODE_I = "011" and FETCH_STATE = FETCH_OPERAND and
+                       ((COPROC_RD_TRANSFER = '1' and RD_RDY = '1') or (COPROC_WR_TRANSFER = '1' and WR_RDY = '1')) else
               '1' when (OP = UNLK or OP = RTD or OP = RTR or OP = RTS) and FETCH_STATE = FETCH_OPERAND and RD_RDY = '1' and DATA_VALID = '1' else '0';
 
     with OP select
         AR_DEC_I <= '1' when ABCD | ADD | ADDA | ADDI | ADDQ | ADDX | AND_B | ANDI | ASL | ASR | BCHG | BCLR | BSET | BTST | CAS | CHK | CMP | CMPA | CMPI | 
                              DIVS | DIVU | EOR | EORI | LSL | LSR | MOVE | MOVEA | MOVE_TO_CCR | MOVE_TO_SR | MOVES | MULS | MULU | NBCD | NEG | NEGX | 
-                             NOT_B | OR_B | ORI | PACK | ROTL | ROTR | ROXL | ROXR | SBCD | SUB | SUBA | SUBI | SUBQ | SUBX | TAS | TST | UNPK, '0' when others;
+                             NOT_B | OR_B | ORI | PACK | ROTL | ROTR | ROXL | ROXR | SBCD | SUB | SUBA | SUBI | SUBQ | SUBX | TAS | TST | UNPK | COPROC, '0' when others;
 
     AR_DEC <= AR_DEC_I when ADR_MODE_I = "100" and FETCH_STATE /= CALC_AEFF and NEXT_FETCH_STATE = CALC_AEFF else
               '1' when (OP = BSR or OP = JSR or OP = LINK) and FETCH_STATE = START_OP and NEXT_FETCH_STATE /= START_OP else
@@ -1990,7 +2009,11 @@ begin
                 -- Fetch exactly one coprocessor extension word without
                 -- entering indexed-EA extension decode paths.
                 if EW_ACK = '1' or EW_RDY = '1' then
-                    NEXT_FETCH_STATE <= INIT_EXEC_WB;
+                    if COPROC_MEM_EA = '1' and (COPROC_RD_TRANSFER = '1' or COPROC_WR_TRANSFER = '1') then
+                        NEXT_FETCH_STATE <= CALC_AEFF;
+                    else
+                        NEXT_FETCH_STATE <= INIT_EXEC_WB;
+                    end if;
                 else
                     NEXT_FETCH_STATE <= FETCH_COPROC_EW;
                 end if;
@@ -2123,8 +2146,11 @@ begin
             when CALC_AEFF =>
                 NEXT_FETCH_STATE <= FETCH_OPERAND; -- One CLK calculation delay.
             when FETCH_OPERAND =>
-                if RD_RDY = '1' then
+                if (OP = COPROC and COPROC_WR_TRANSFER = '1' and WR_RDY = '1') or
+                   (RD_RDY = '1' and (OP /= COPROC or COPROC_RD_TRANSFER = '1')) then
                     case OP is
+                        when COPROC =>
+                            NEXT_FETCH_STATE <= INIT_EXEC_WB;
                         when ABCD | ADDX | SBCD | SUBX =>
                             if PHASE2 = false then
                                 NEXT_FETCH_STATE <= CALC_AEFF;
