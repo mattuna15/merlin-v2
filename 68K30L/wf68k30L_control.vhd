@@ -501,7 +501,8 @@ begin
 
     COPROC_OPWORD <= "11" & BIW_0;
     COPROC_EW_FORMAT <= DECODE_COPROC_EW_FORMAT(COPROC_OPWORD, EXT_WORD);
-    COPROC_MEM_EA <= '1' when BIW_0(5 downto 3) /= "000" and BIW_0(5 downto 3) /= "001" else '0';
+    COPROC_MEM_EA <= '1' when BIW_0(5 downto 3) /= "000" and BIW_0(5 downto 3) /= "001" and
+                              not (BIW_0(5 downto 3) = "111" and BIW_0(2) = '1') else '0';
     COPROC_WR_TRANSFER <= '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_EW_FORMAT = COPROC_EW_FSAVE_FRESTORE and EXT_WORD(13) = '1' else
                          '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_EW_FORMAT = COPROC_EW_FMOVE and EXT_WORD(13) = '1' else '0';
     COPROC_RD_TRANSFER <= '1' when OP = COPROC and COPROC_MEM_EA = '1' and COPROC_WR_TRANSFER = '0' and
