@@ -662,6 +662,7 @@ begin
                    BIW_0(2 downto 0) when OP = BFEXTS or OP = BFEXTU or OP = BFFFO or OP = BFINS or OP = BFSET or OP = BFTST else 
                    BIW_0(2 downto 0) when OP = CAS or OP = CHK or OP = CHK2 or OP = CLR or OP = CMP or OP = CMPA or OP = CMPI or OP = CMPM or OP = CMP2 else
                    BIW_0(2 downto 0) when OP = DIVS or OP = DIVU or OP = EOR or OP = EORI or OP = EXG or OP = JMP or OP = JSR or OP = LEA or OP = LINK or OP = LSL or OP = LSR else
+                   BIW_0(2 downto 0) when OP = COPROC else
                    BIW_0(2 downto 0) when OP = MOVE or OP = MOVEA or OP = MOVE_FROM_CCR or OP = MOVE_FROM_SR or OP = MOVE_TO_CCR or OP = MOVE_TO_SR else
                    BIW_0(2 downto 0) when OP = MOVE_USP or OP = MOVEM or OP = MOVEP or OP = MOVES or OP = MULS or OP = MULU else
                    BIW_0(2 downto 0) when OP = NBCD or OP = NEG or OP = NEGX or OP = NOT_B or OP = OR_B or OP = ORI or OP = PACK or OP = PEA else
@@ -727,12 +728,14 @@ begin
               '1' when OP = MOVEA and ADR_MODE_I = "011" and FETCH_STATE = INIT_EXEC_WB and NEXT_FETCH_STATE /= INIT_EXEC_WB else
               '1' when OP = MOVEM and ADR_MODE_I = "011" and ALU_INIT_I = '1' else
               '1' when OP = MOVES and ADR_MODE_I = "011" and ALU_INIT_I = '1' else 
+              '1' when OP = COPROC and ADR_MODE_I = "011" and FETCH_STATE = FETCH_OPERAND and
+                       ((COPROC_RD_TRANSFER = '1' and RD_RDY = '1') or (COPROC_WR_TRANSFER = '1' and WR_RDY = '1')) else
               '1' when (OP = UNLK or OP = RTD or OP = RTR or OP = RTS) and FETCH_STATE = FETCH_OPERAND and RD_RDY = '1' and DATA_VALID = '1' else '0';
 
     with OP select
         AR_DEC_I <= '1' when ABCD | ADD | ADDA | ADDI | ADDQ | ADDX | AND_B | ANDI | ASL | ASR | BCHG | BCLR | BSET | BTST | CAS | CHK | CMP | CMPA | CMPI | 
                              DIVS | DIVU | EOR | EORI | LSL | LSR | MOVE | MOVEA | MOVE_TO_CCR | MOVE_TO_SR | MOVES | MULS | MULU | NBCD | NEG | NEGX | 
-                             NOT_B | OR_B | ORI | PACK | ROTL | ROTR | ROXL | ROXR | SBCD | SUB | SUBA | SUBI | SUBQ | SUBX | TAS | TST | UNPK, '0' when others;
+                             NOT_B | OR_B | ORI | PACK | ROTL | ROTR | ROXL | ROXR | SBCD | SUB | SUBA | SUBI | SUBQ | SUBX | TAS | TST | UNPK | COPROC, '0' when others;
 
     AR_DEC <= AR_DEC_I when ADR_MODE_I = "100" and FETCH_STATE /= CALC_AEFF and NEXT_FETCH_STATE = CALC_AEFF else
               '1' when (OP = BSR or OP = JSR or OP = LINK) and FETCH_STATE = START_OP and NEXT_FETCH_STATE /= START_OP else
